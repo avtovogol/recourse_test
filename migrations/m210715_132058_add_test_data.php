@@ -28,6 +28,26 @@ class m210715_132058_add_test_data extends Migration
             'name' => 'Событие 4',
             'description' => 'Описание события 4'
         ]);
+
+        $this->insert('event_custom', [
+            'event_id' => 1,
+            'date' => '2021-07-12'
+        ]);
+
+        $this->insert('event_custom', [
+            'event_id' => 2,
+            'date' => '2021-07-12'
+        ]);
+
+        $this->insert('event_custom_times', [
+            'custom_id' => 1,
+            'time' => '15:00'
+        ]);
+        $this->insert('event_custom_times', [
+            'custom_id' => 2,
+            'time' => '16:00'
+        ]);
+
         $this->batchInsert('event_times', [
             'event_id',
             'week_day',
@@ -46,6 +66,13 @@ class m210715_132058_add_test_data extends Migration
             'time' => '9:00',
             'contact' => 'контакты Ивана'
         ]);
+        $this->insert('event_bids', [
+            'event_id' => '2',
+            'date' => '2021-07-12',
+            'name' => 'Петр',
+            'time' => '16:00',
+            'contact' => 'контакты Петра'
+        ]);
     }
 
     /**
@@ -53,9 +80,6 @@ class m210715_132058_add_test_data extends Migration
      */
     public function safeDown()
     {
-        echo "m210715_132058_add_test_data cannot be reverted.\n";
-
-        return false;
     }
 
     /*

@@ -27,6 +27,7 @@ class Events extends \yii\db\ActiveRecord
         return 'events';
     }
 
+
     /**
      * {@inheritdoc}
      */
@@ -81,32 +82,74 @@ class Events extends \yii\db\ActiveRecord
     }
 
     /**
+     * Get custom and weekly events array by date
+     *
      * @param string $date
      * @return array
      */
     public static function findMapByDate(string $date): array
     {
         $date = date('Y-m-d', strtotime($date));
-        $dayOfWeek = date('w', strtotime($date));
 
+        $weeklyEventsArray = self::getWeeklyEventsByDate($date)
+            ->asArray()
+            ->all();
+
+        $customEventsArray = self::getCustomEventsByDate($date)
+            ->asArray()
+            ->all();
+
+        return array_merge($weeklyEventsArray, $customEventsArray);
+    }
+
+    /**
+     * @param string $date
+     * @return ActiveQuery
+     */
+    private static function getWeeklyEventsByDate(string $date)
+    {
+        $dayOfWeek = date('w', strtotime($date));
 
         return self::find()
             ->alias('e')
             ->select([
-                new Expression(':date as date',['date' => $date]),
+                new Expression(':date as date', ['date' => $date]),
                 'et.time', 'e.name as eventName',
                 new Expression('IF(ISNULL(eb.id), \'true\', \'false\') as isFree')
             ])
-            ->joinWith(['eventTimes as et' => function (ActiveQuery $query) use ($dayOfWeek) {
+            ->innerJoinWith(['eventTimes as et' => function (ActiveQuery $query) use ($dayOfWeek) {
                 return $query
-                    ->andWhere(['et.week_day' => $dayOfWeek]);
+                    ->andOnCondition(['et.week_day' => $dayOfWeek]);
             }], false)
             ->joinWith(['eventBids as eb' => function (ActiveQuery $query) use ($date) {
                 return $query
                     ->andOnCondition('eb.time = et.time')
                     ->andOnCondition(['eb.date' => $date]);
+            }], false);
+    }
+
+
+    /**
+     * @param string $date
+     * @return ActiveQuery
+     */
+    private static function getCustomEventsByDate(string $date)
+    {
+        return self::find()
+            ->alias('e')
+            ->select([
+                new Expression(':date as date', ['date' => $date]),
+                'ect.time', 'e.name as eventName',
+                new Expression('IF(ISNULL(eb.id), \'true\', \'false\') as isFree')
+            ])
+            ->innerJoinWith(['eventCustoms.eventCustomTimes as ect' => function (ActiveQuery $query) use ($date) {
+                return $query
+                    ->andOnCondition([EventCustom::tableName() . '.date' => $date]);
             }], false)
-            ->asArray()
-            ->all();
+            ->joinWith(['eventBids as eb' => function (ActiveQuery $query) use ($date) {
+                return $query
+                    ->andOnCondition('eb.time = ect.time')
+                    ->andOnCondition(['eb.date' => $date]);
+            }], false);
     }
 }
